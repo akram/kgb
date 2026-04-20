@@ -1,0 +1,91 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: policies.kgb.io
+spec:
+  group: kgb.io
+  names:
+    kind: Policy
+    listKind: PolicyList
+    plural: policies
+    singular: policy
+    shortNames:
+      - kgbpol
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Decision
+          type: string
+          jsonPath: .spec.decision
+        - name: Action
+          type: string
+          jsonPath: .spec.intentMatch.action
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - decision
+              properties:
+                priority:
+                  type: integer
+                  format: int32
+                  description: Higher priority policies are evaluated first.
+                intentMatch:
+                  type: object
+                  description: Match criteria against classified intent.
+                  properties:
+                    action:
+                      type: string
+                    targetExact:
+                      type: string
+                    targetRegex:
+                      type: string
+                    targetDomainSuffix:
+                      type: string
+                    riskLevels:
+                      type: array
+                      items:
+                        type: string
+                        enum: [low, medium, high, critical]
+                matchLabels:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: Optional labels on AgentSession that must match.
+                decision:
+                  type: string
+                  enum:
+                    - deny
+                    - allow
+                    - require_approval
+                    - session_trust
+                    - time_bound_allow
+                    - surveillance
+                timeBoundAllow:
+                  type: string
+                  description: Go duration string (e.g. 15m) when decision is time_bound_allow.
+                trustModeOverride:
+                  type: string
+                  enum: [paranoid, balanced, permissive]
+                  description: Optional per-policy trust semantics for evaluation ordering.
+            status:
+              type: object
+              properties:
+                observedGeneration:
+                  type: integer
+                  format: int64
+                message:
+                  type: string
+          required:
+            - spec

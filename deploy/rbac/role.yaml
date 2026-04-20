@@ -1,0 +1,66 @@
+# Sample RBAC for kgb-controller and kgb-gateway in namespace `kgb-system`.
+# Adjust namespace and bind to your ServiceAccounts.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kgb-controller
+  namespace: kgb-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kgb-gateway
+  namespace: kgb-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kgb-controller
+rules:
+  - apiGroups: ["kgb.io"]
+    resources: ["policies", "approvalrequests", "agentsessions"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: ["kgb.io"]
+    resources: ["policies/status", "approvalrequests/status", "agentsessions/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kgb-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kgb-controller
+subjects:
+  - kind: ServiceAccount
+    name: kgb-controller
+    namespace: kgb-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kgb-gateway
+rules:
+  - apiGroups: ["kgb.io"]
+    resources: ["policies"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["kgb.io"]
+    resources: ["approvalrequests", "agentsessions"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kgb-gateway
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kgb-gateway
+subjects:
+  - kind: ServiceAccount
+    name: kgb-gateway
+    namespace: kgb-system

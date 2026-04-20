@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kgb-gateway
+  namespace: kgb-system
+  labels:
+    app.kubernetes.io/name: kgb-gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kgb-gateway
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kgb-gateway
+    spec:
+      serviceAccountName: kgb-gateway
+      containers:
+        - name: gateway
+          image: ghcr.io/akram/kgb-gateway:latest
+          args: ["--bind=:8080"]
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: KGB_DEFAULT_NAMESPACE
+              value: "kgb-system"
+            - name: KGB_TRUST_MODE
+              value: "balanced"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kgb-gateway
+  namespace: kgb-system
+spec:
+  selector:
+    app.kubernetes.io/name: kgb-gateway
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

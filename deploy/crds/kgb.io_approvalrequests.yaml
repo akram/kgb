@@ -1,0 +1,76 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: approvalrequests.kgb.io
+spec:
+  group: kgb.io
+  names:
+    kind: ApprovalRequest
+    listKind: ApprovalRequestList
+    plural: approvalrequests
+    singular: approvalrequest
+    shortNames:
+      - kgbapr
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: Action
+          type: string
+          jsonPath: .spec.intent.action
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - intent
+              properties:
+                sessionRef:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                intent:
+                  type: object
+                  required:
+                    - action
+                  properties:
+                    action:
+                      type: string
+                    target:
+                      type: string
+                    risk:
+                      type: string
+                      enum: [low, medium, high, critical]
+                    confidence:
+                      type: number
+                      format: double
+                    rawPayload:
+                      type: string
+                reason:
+                  type: string
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum: [Pending, Allowed, Denied, Expired]
+                message:
+                  type: string
+                decidedAt:
+                  type: string
+                  format: date-time
+          required:
+            - spec
